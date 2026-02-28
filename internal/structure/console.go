@@ -1,0 +1,289 @@
+package structure
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+
+	"santaizi/internal/core"
+)
+
+// 终端颜色常量
+const (
+	Reset   = "\033[0m"
+	Red     = "\033[31m"
+	Green   = "\033[32m"
+	Yellow  = "\033[33m"
+	Blue    = "\033[34m"
+	Magenta = "\033[35m"
+	Cyan    = "\033[36m"
+	White   = "\033[37m"
+	Bold    = "\033[1m"
+)
+
+// Console 控制台结构体
+type Console struct {
+	Registry      *core.Registry
+	Loader        *core.ModuleLoader
+	CurrentModule *core.LoadedModule
+	ModuleConfig  map[string]string
+	History       []string
+}
+
+// NewConsole 创建一个新的控制台实例
+func NewConsole(registry *core.Registry, loader *core.ModuleLoader) *Console {
+	return &Console{
+		Registry:     registry,
+		Loader:       loader,
+		ModuleConfig: make(map[string]string),
+		History:      []string{},
+	}
+}
+
+// Start 启动控制台
+func (c *Console) Start() {
+	fmt.Printf("%s=====================================================================%s\n", Blue, Reset)
+	fmt.Printf("%s                        三太子%s\n", Bold+Cyan, Reset)
+	fmt.Printf("%s                    网络安全框架 v1.0.0%s\n", Bold+White, Reset)
+	fmt.Printf("%s=====================================================================%s\n", Blue, Reset)
+	fmt.Printf("\n")
+	fmt.Printf("%s输入 'help' 查看可用命令%s\n", Green, Reset)
+	fmt.Printf("\n")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		if c.CurrentModule != nil {
+			fmt.Printf("%s[*] 三太子 (%s) > %s", Green, c.CurrentModule.Name, Reset)
+		} else {
+			fmt.Printf("%s[*] 三太子 > %s", Green, Reset)
+		}
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err.Error() == "EOF" {
+				return
+			}
+			fmt.Printf("读取行失败: %v\n", err)
+			continue
+		}
+
+		line = strings.TrimSpace(line)
+
+		if line == "" {
+			continue
+		}
+
+		c.History = append(c.History, line)
+
+		c.handleCommand(line)
+		fmt.Printf("\n")
+	}
+}
+
+// handleCommand 处理命令
+func (c *Console) handleCommand(line string) {
+	parts := strings.Fields(line)
+	if len(parts) == 0 {
+		return
+	}
+
+	command := parts[0]
+	switch command {
+	case "help":
+		c.printHelp()
+	case "search":
+		if len(parts) < 2 {
+			fmt.Println("使用方法: search <关键词>")
+			return
+		}
+		keyword := strings.Join(parts[1:], " ")
+		c.searchModules(keyword)
+	case "use":
+		if len(parts) < 2 {
+			fmt.Println("使用方法: use <模块ID>")
+			return
+		}
+		id, err := strconv.Atoi(parts[1])
+		if err != nil {
+			fmt.Println("无效的模块ID")
+			return
+		}
+		c.useModule(id)
+	case "set":
+		if len(parts) < 3 {
+			fmt.Println("使用方法: set <选项> <值>")
+			return
+		}
+		option := parts[1]
+		value := strings.Join(parts[2:], " ")
+		c.setOption(option, value)
+	case "run":
+		c.runModule()
+	case "back":
+		c.backCommand()
+	case "options":
+		c.optionsCommand()
+	case "exit":
+		os.Exit(0)
+	default:
+		c.executeExternalCommand(line)
+	}
+}
+
+// backCommand 退出当前模块，回到主控制台
+func (c *Console) backCommand() {
+	if c.CurrentModule == nil {
+		fmt.Println("未选择模块")
+		return
+	}
+	c.CurrentModule = nil
+	c.ModuleConfig = make(map[string]string)
+	fmt.Println("已退出模块")
+}
+
+// optionsCommand 显示当前模块的所有选项及其当前值
+func (c *Console) optionsCommand() {
+	if c.CurrentModule == nil {
+		fmt.Println("未选择模块。使用 'use <ID>' 选择一个模块")
+		return
+	}
+
+	fmt.Printf("%s模块选项:%s\n", Bold+White, Reset)
+	fmt.Println("名称     类型     必填      默认值      当前值")
+	fmt.Println("==================================================")
+	for _, option := range c.CurrentModule.Options {
+		currentValue := c.ModuleConfig[option.Name]
+		fmt.Printf("%-8s %-8s %-8t %-10s %s\n", option.Name, option.Type, option.Required, option.Default, currentValue)
+	}
+}
+
+// executeExternalCommand 执行外部命令
+func (c *Console) executeExternalCommand(cmdLine string) {
+	cmd := exec.Command("bash", "-c", cmdLine)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	err := cmd.Run()
+	if err != nil {
+		fmt.Printf("执行命令失败: %v\n", err)
+	}
+}
+
+// printHelp 显示帮助信息
+func (c *Console) printHelp() {
+	fmt.Printf("%s可用命令:%s\n", Bold+White, Reset)
+	fmt.Printf("  %shelp%s              - %s显示此帮助信息%s\n", Cyan, Reset, White, Reset)
+	fmt.Printf("  %ssearch%s <关键词>  - %s按关键词搜索模块%s\n", Cyan, Reset, White, Reset)
+	fmt.Printf("  %suse%s <ID>          - %s按ID选择模块%s\n", Cyan, Reset, White, Reset)
+	fmt.Printf("  %sset%s <选项> <值>   - %s设置模块选项%s\n", Cyan, Reset, White, Reset)
+	fmt.Printf("  %soptions%s           - %s显示当前模块的所有选项%s\n", Cyan, Reset, White, Reset)
+	fmt.Printf("  %srun%s               - %s运行选定的模块%s\n", Cyan, Reset, White, Reset)
+	fmt.Printf("  %sback%s              - %s退出当前模块，回到主控制台%s\n", Cyan, Reset, White, Reset)
+	fmt.Printf("  %sexit%s              - %s退出框架%s\n", Cyan, Reset, White, Reset)
+}
+
+// searchModules 搜索模块
+func (c *Console) searchModules(keyword string) {
+	results := c.Registry.SearchModules(keyword)
+	if len(results) == 0 {
+		fmt.Printf("%s未找到模块%s\n", Red, Reset)
+		return
+	}
+
+	fmt.Printf("%s匹配的模块%s\n", Bold+White, Reset)
+	fmt.Println("============")
+	fmt.Println("")
+	fmt.Printf("%s%4s  %-30s  %-15s  %-15s  %s%s\n", Bold+Cyan, "#", "名称", "CNVD", "CVE", "描述", Reset)
+	fmt.Println("---  ------------------------------  ---------------  ---------------  -----------")
+	for _, module := range results {
+		cnvd := module.CNVD
+		if cnvd == "" {
+			cnvd = "-"
+		}
+		cve := module.CVE
+		if cve == "" {
+			cve = "-"
+		}
+		fmt.Printf("%4d  %s%-30s%s  %s%-15s%s  %s%-15s%s  %s%s\n", module.ID, Green, module.Name, Reset, Yellow, cnvd, Reset, Yellow, cve, Reset, White, module.Description)
+	}
+	fmt.Println("")
+	fmt.Printf("%s通过名称或索引与模块交互。例如: info 0, use 0 或 use <模块名称>%s\n", White, Reset)
+	fmt.Println("")
+}
+
+// useModule 使用模块
+func (c *Console) useModule(id int) {
+	module, err := c.Registry.GetModuleByID(id)
+	if err != nil {
+		fmt.Println("错误:", err)
+		return
+	}
+
+	c.CurrentModule = module
+	c.ModuleConfig = make(map[string]string)
+
+	for _, option := range module.Options {
+		c.ModuleConfig[option.Name] = option.Default
+	}
+
+	fmt.Printf("[*] 正在使用模块: %s\n", module.Name)
+	fmt.Println("选项:")
+	fmt.Println("名称     类型     必填      默认值")
+	fmt.Println("=================================")
+	for _, option := range module.Options {
+		fmt.Printf("%-8s %-8s %-8t %s\n", option.Name, option.Type, option.Required, option.Default)
+	}
+}
+
+// setOption 设置模块选项
+func (c *Console) setOption(option, value string) {
+	if c.CurrentModule == nil {
+		fmt.Println("未选择模块。使用 'use <ID>' 选择一个模块")
+		return
+	}
+
+	found := false
+	for _, opt := range c.CurrentModule.Options {
+		if opt.Name == option {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		fmt.Println("选项未找到")
+		return
+	}
+
+	c.ModuleConfig[option] = value
+	fmt.Printf("%s => %s\n", option, value)
+}
+
+// runModule 运行模块
+func (c *Console) runModule() {
+	if c.CurrentModule == nil {
+		fmt.Println("未选择模块。使用 'use <ID>' 选择一个模块")
+		return
+	}
+
+	for _, option := range c.CurrentModule.Options {
+		if option.Required && c.ModuleConfig[option.Name] == "" {
+			fmt.Printf("错误: 必填选项 '%s' 未设置\n", option.Name)
+			return
+		}
+	}
+
+	fmt.Println("正在运行模块:", c.CurrentModule.Name)
+	result, err := c.Loader.ExecuteModule(c.CurrentModule.ID, c.ModuleConfig)
+	if err != nil {
+		fmt.Println("错误:", err)
+		return
+	}
+
+	fmt.Println("结果:")
+	fmt.Println(result)
+}

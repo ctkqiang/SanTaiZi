@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"santaizi/internal/core"
 )
@@ -15,12 +14,7 @@ func 三太子() {
 
 	modulesDir := os.Getenv("SANTAIZI_MODULES_DIR")
 	if modulesDir == "" {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Println("获取主目录错误:", err)
-			os.Exit(1)
-		}
-		modulesDir = filepath.Join(homeDir, ".santaizi", "modules")
+		modulesDir = "/Users/johnmelodyme/Documents/ctkqiang/SanTaiZi/modules"
 	}
 
 	if err := os.MkdirAll(modulesDir, 0755); err != nil {
