@@ -1,0 +1,25 @@
+syntax = "proto3";
+package proto;
+option go_package = ".";
+
+service ModuleService {
+  rpc GetInfo(Empty) returns (InfoResponse);
+  rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+}
+
+message Empty {}
+
+message InfoResponse {
+  string name = 1;
+  string description = 2;
+  repeated string options = 3;
+}
+
+message ExecuteRequest {
+  map<string, string> config = 1;
+}
+
+message ExecuteResponse {
+  string result = 1;
+  string error = 2;
+}
