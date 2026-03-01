@@ -187,6 +187,77 @@ func (c *Console) printHelp() {
 	fmt.Printf("  %sexit%s              - %s退出框架%s\n", Cyan, Reset, White, Reset)
 }
 
+// 计算字符串在终端中的显示宽度（中文字符算2个宽度）
+func getStringWidth(s string) int {
+	width := 0
+	for _, r := range s {
+		if r > 127 {
+			width += 2 // 中文字符
+		} else {
+			width += 1 // 英文字符
+		}
+	}
+	return width
+}
+
+// 填充字符串到指定宽度
+func padString(s string, width int) string {
+	currentWidth := getStringWidth(s)
+	if currentWidth >= width {
+		return s
+	}
+	padding := width - currentWidth
+	return s + strings.Repeat(" ", padding)
+}
+
+// 获取终端宽度
+func getTerminalWidth() int {
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	output, err := cmd.Output()
+	if err != nil {
+		return 80 // 默认宽度
+	}
+	parts := strings.Fields(string(output))
+	if len(parts) < 2 {
+		return 80 // 默认宽度
+	}
+	width, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 80 // 默认宽度
+	}
+	return width
+}
+
+// 分割字符串为多行，每行不超过指定宽度
+func wrapText(text string, width int) []string {
+	var lines []string
+	currentLine := ""
+	currentWidth := 0
+
+	for _, r := range text {
+		charWidth := 1
+		if r > 127 {
+			charWidth = 2
+		}
+
+		if currentWidth+charWidth > width {
+			lines = append(lines, currentLine)
+			currentLine = string(r)
+			currentWidth = charWidth
+		} else {
+			currentLine += string(r)
+			currentWidth += charWidth
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	return lines
+}
+
 // searchModules 搜索模块
 func (c *Console) searchModules(keyword string) {
 	results := c.Registry.SearchModules(keyword)
@@ -196,10 +267,78 @@ func (c *Console) searchModules(keyword string) {
 	}
 
 	fmt.Printf("%s匹配的模块%s\n", Bold+White, Reset)
-	fmt.Println("============")
+	fmt.Println("===============================")
 	fmt.Println("")
-	fmt.Printf("%s%4s  %-30s  %-15s  %-15s  %s%s\n", Bold+Cyan, "#", "名称", "CNVD", "CVE", "描述", Reset)
-	fmt.Println("---  ------------------------------  ---------------  ---------------  -----------")
+
+	// 获取终端宽度
+	terminalWidth := getTerminalWidth()
+
+	// 计算各列宽度
+	// 固定列宽：#(5), 分隔符(4个分隔符，每个2个字符，共8)
+	fixedWidth := 5 + 8
+	// 剩余宽度分配给其他列
+	availableWidth := terminalWidth - fixedWidth
+
+	// 确保有足够的可用宽度
+	if availableWidth < 65 { // 最小总列宽：20+15+10+20
+		availableWidth = 65
+	}
+
+	// 列宽分配比例：名称:CNVD:CVE:描述 = 2:1:1:3
+	nameWidth := availableWidth * 2 / 7
+	cnvdWidth := availableWidth * 1 / 7
+	cveWidth := availableWidth * 1 / 7
+	descWidth := availableWidth * 3 / 7
+
+	// 确保最小宽度
+	if nameWidth < 20 {
+		nameWidth = 20
+	}
+	if cnvdWidth < 15 {
+		cnvdWidth = 15
+	}
+	if cveWidth < 10 {
+		cveWidth = 10
+	}
+	if descWidth < 20 {
+		descWidth = 20
+	}
+
+	// 调整总宽度，确保不超过终端宽度
+	totalWidth := fixedWidth + nameWidth + cnvdWidth + cveWidth + descWidth
+	if totalWidth > terminalWidth {
+		excess := totalWidth - terminalWidth
+		// 从描述列减去多余的宽度
+		if descWidth > excess {
+			descWidth -= excess
+		} else {
+			excess -= descWidth
+			descWidth = 20
+			// 从名称列减去剩余的多余宽度
+			if nameWidth > excess {
+				nameWidth -= excess
+			} else {
+				nameWidth = 20
+			}
+		}
+	}
+
+	// 打印表格头部
+	fmt.Printf("%s#   | %s | %s | %s | %s%s\n",
+		Cyan,
+		padString("名称", nameWidth),
+		padString("CNVD", cnvdWidth),
+		padString("CVE", cveWidth),
+		padString("描述", descWidth),
+		Reset)
+
+	// 打印分隔线
+	fmt.Printf("---+%s+%s+%s+%s\n",
+		strings.Repeat("-", nameWidth),
+		strings.Repeat("-", cnvdWidth),
+		strings.Repeat("-", cveWidth),
+		strings.Repeat("-", descWidth))
+
 	for i, module := range results {
 		cnvd := module.CNVD
 		if cnvd == "" {
@@ -209,16 +348,33 @@ func (c *Console) searchModules(keyword string) {
 		if cve == "" {
 			cve = "-"
 		}
-		fmt.Printf("%4d  %s%-30s%s  %s%-15s%s  %s%-15s%s  %s%s\n", i, Green, module.Name, Reset, Yellow, cnvd, Reset, Yellow, cve, Reset, White, module.Description)
+
+		// 分割描述文本为多行
+		description := module.Description
+		descLines := wrapText(description, descWidth)
+
+		// 打印第一行
+		paddedName := padString(module.Name, nameWidth)
+		paddedCNVD := padString(cnvd, cnvdWidth)
+		paddedCVE := padString(cve, cveWidth)
+		paddedDesc := padString(descLines[0], descWidth)
+		fmt.Printf("%d   | %s | %s | %s | %s\n", i, paddedName, paddedCNVD, paddedCVE, paddedDesc)
+
+		// 打印后续行
+		for j := 1; j < len(descLines); j++ {
+			emptyName := padString("", nameWidth)
+			emptyCNVD := padString("", cnvdWidth)
+			emptyCVE := padString("", cveWidth)
+			paddedDesc := padString(descLines[j], descWidth)
+			fmt.Printf("    | %s | %s | %s | %s\n", emptyName, emptyCNVD, emptyCVE, paddedDesc)
+		}
 	}
 	fmt.Println("")
-	fmt.Printf("%s通过名称或索引与模块交互。例如: info 0, use 0 或 use <模块名称>%s\n", White, Reset)
+	fmt.Printf("%s通过名称或索引与模块交互。例如: use 0 或 use <模块名称>%s\n", Green, Reset)
 	fmt.Println("")
 }
 
-// useModule 使用模块
 func (c *Console) useModule(index int) {
-	// 获取所有模块
 	allModules := c.Registry.ListModules()
 	if index < 0 || index >= len(allModules) {
 		fmt.Println("无效的模块索引")

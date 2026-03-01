@@ -38,6 +38,12 @@ func (l *ModuleLoader) LoadModules(modulesDir string) error {
 			return nil
 		}
 
+		// 跳过主框架二进制文件
+		fileName := filepath.Base(path)
+		if fileName == "santaizi" {
+			return nil
+		}
+
 		if err := l.loadModule(path); err != nil {
 			fmt.Printf("Failed to load module %s: %v\n", path, err)
 		}

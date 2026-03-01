@@ -14,7 +14,7 @@ func 三太子() {
 
 	modulesDir := os.Getenv("SANTAIZI_MODULES_DIR")
 	if modulesDir == "" {
-		modulesDir = "/Users/johnmelodyme/Documents/ctkqiang/SanTaiZi/modules"
+		modulesDir = "/Users/johnmelodyme/Documents/ctkqiang/SanTaiZi/modules/bin"
 	}
 
 	if err := os.MkdirAll(modulesDir, 0755); err != nil {
