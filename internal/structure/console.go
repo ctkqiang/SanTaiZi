@@ -61,6 +61,7 @@ func (c *Console) Start() {
 		} else {
 			fmt.Printf("%s[*] 三太子 > %s", Green, Reset)
 		}
+
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err.Error() == "EOF" {
@@ -199,7 +200,7 @@ func (c *Console) searchModules(keyword string) {
 	fmt.Println("")
 	fmt.Printf("%s%4s  %-30s  %-15s  %-15s  %s%s\n", Bold+Cyan, "#", "名称", "CNVD", "CVE", "描述", Reset)
 	fmt.Println("---  ------------------------------  ---------------  ---------------  -----------")
-	for _, module := range results {
+	for i, module := range results {
 		cnvd := module.CNVD
 		if cnvd == "" {
 			cnvd = "-"
@@ -208,7 +209,7 @@ func (c *Console) searchModules(keyword string) {
 		if cve == "" {
 			cve = "-"
 		}
-		fmt.Printf("%4d  %s%-30s%s  %s%-15s%s  %s%-15s%s  %s%s\n", module.ID, Green, module.Name, Reset, Yellow, cnvd, Reset, Yellow, cve, Reset, White, module.Description)
+		fmt.Printf("%4d  %s%-30s%s  %s%-15s%s  %s%-15s%s  %s%s\n", i, Green, module.Name, Reset, Yellow, cnvd, Reset, Yellow, cve, Reset, White, module.Description)
 	}
 	fmt.Println("")
 	fmt.Printf("%s通过名称或索引与模块交互。例如: info 0, use 0 或 use <模块名称>%s\n", White, Reset)
@@ -216,12 +217,16 @@ func (c *Console) searchModules(keyword string) {
 }
 
 // useModule 使用模块
-func (c *Console) useModule(id int) {
-	module, err := c.Registry.GetModuleByID(id)
-	if err != nil {
-		fmt.Println("错误:", err)
+func (c *Console) useModule(index int) {
+	// 获取所有模块
+	allModules := c.Registry.ListModules()
+	if index < 0 || index >= len(allModules) {
+		fmt.Println("无效的模块索引")
 		return
 	}
+
+	// 根据索引获取模块
+	module := allModules[index]
 
 	c.CurrentModule = module
 	c.ModuleConfig = make(map[string]string)
