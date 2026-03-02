@@ -82,8 +82,11 @@ func (r *Registry) ListModules() []*LoadedModule {
 	defer r.mu.RUnlock()
 
 	modules := make([]*LoadedModule, 0, len(r.modules))
-	for _, module := range r.modules {
-		modules = append(modules, module)
+	// 按照 ID 顺序添加模块
+	for i := 1; i < r.nextID; i++ {
+		if module, exists := r.modules[i]; exists {
+			modules = append(modules, module)
+		}
 	}
 
 	return modules
@@ -94,9 +97,12 @@ func (r *Registry) SearchModules(keyword string) []*LoadedModule {
 	defer r.mu.RUnlock()
 
 	var results []*LoadedModule
-	for _, module := range r.modules {
-		if containsKeyword(module.Name, keyword) || containsKeyword(module.Description, keyword) {
-			results = append(results, module)
+	// 按照 ID 顺序搜索模块
+	for i := 1; i < r.nextID; i++ {
+		if module, exists := r.modules[i]; exists {
+			if containsKeyword(module.Name, keyword) || containsKeyword(module.Description, keyword) {
+				results = append(results, module)
+			}
 		}
 	}
 

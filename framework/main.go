@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"santaizi/internal/core"
+	"santaizi/internal/structure"
 )
 
 func 三太子() {
@@ -27,7 +28,7 @@ func 三太子() {
 		fmt.Println("加载模块错误:", err)
 	}
 
-	console := NewConsole(registry, loader)
+	console := structure.NewConsole(registry, loader)
 	console.Start()
 }
 

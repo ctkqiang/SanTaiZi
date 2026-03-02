@@ -24,6 +24,8 @@ const (
 	Bold    = "\033[1m"
 )
 
+// DatabaseVersion 数据库版本信息
+
 // Console 控制台结构体
 type Console struct {
 	Registry      *core.Registry
@@ -57,9 +59,9 @@ func (c *Console) Start() {
 
 	for {
 		if c.CurrentModule != nil {
-			fmt.Printf("%s[*] 三太子 (%s) > %s", Green, c.CurrentModule.Name, Reset)
+			fmt.Printf("%s三太子 (%s) > %s", Green, c.CurrentModule.Name, Reset)
 		} else {
-			fmt.Printf("%s[*] 三太子 > %s", Green, Reset)
+			fmt.Printf("%s三太子 > %s", Green, Reset)
 		}
 
 		line, err := reader.ReadString('\n')
@@ -104,15 +106,17 @@ func (c *Console) handleCommand(line string) {
 		c.searchModules(keyword)
 	case "use":
 		if len(parts) < 2 {
-			fmt.Println("使用方法: use <模块ID>")
+			fmt.Println("使用方法: use <模块ID> 或 use <模块名称>")
 			return
 		}
-		id, err := strconv.Atoi(parts[1])
-		if err != nil {
-			fmt.Println("无效的模块ID")
-			return
+		// 尝试将参数解析为数字 ID
+		if id, err := strconv.Atoi(parts[1]); err == nil {
+			c.useModule(id)
+		} else {
+			// 否则尝试通过模块名称查找
+			moduleName := strings.Join(parts[1:], " ")
+			c.useModuleByName(moduleName)
 		}
-		c.useModule(id)
 	case "set":
 		if len(parts) < 3 {
 			fmt.Println("使用方法: set <选项> <值>")
@@ -396,6 +400,39 @@ func (c *Console) useModule(index int) {
 	fmt.Println("名称     类型     必填      默认值")
 	fmt.Println("=================================")
 	for _, option := range module.Options {
+		fmt.Printf("%-8s %-8s %-8t %s\n", option.Name, option.Type, option.Required, option.Default)
+	}
+}
+
+// useModuleByName 通过模块名称选择模块
+func (c *Console) useModuleByName(name string) {
+	allModules := c.Registry.ListModules()
+	var foundModule *core.LoadedModule
+
+	for _, module := range allModules {
+		if module.Name == name {
+			foundModule = module
+			break
+		}
+	}
+
+	if foundModule == nil {
+		fmt.Printf("未找到名称为 '%s' 的模块\n", name)
+		return
+	}
+
+	c.CurrentModule = foundModule
+	c.ModuleConfig = make(map[string]string)
+
+	for _, option := range foundModule.Options {
+		c.ModuleConfig[option.Name] = option.Default
+	}
+
+	fmt.Printf("[*] 正在使用模块: %s\n", foundModule.Name)
+	fmt.Println("选项:")
+	fmt.Println("名称     类型     必填      默认值")
+	fmt.Println("=================================")
+	for _, option := range foundModule.Options {
 		fmt.Printf("%-8s %-8s %-8t %s\n", option.Name, option.Type, option.Required, option.Default)
 	}
 }
