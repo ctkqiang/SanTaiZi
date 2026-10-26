@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>三太子 SanTaiZi · 模块化网络安全框架</title>
+  <meta name="description" content="三太子 SanTaiZi 是一个用 Go 编写的模块化网络安全框架。本文档介绍框架原理、SDK/API、模块开发、Termux 使用、贡献流程与 Pull Request 规范。">
+  <meta name="author" content="ctkqiang">
+  <meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23b23a2f'/%3E%3Ctext x='32' y='45' font-size='38' text-anchor='middle' fill='%23fff8f3'%3E%E4%B8%89%3C/text%3E%3C/svg%3E">
+  <script>
+    /* Apply the stored theme before first paint to avoid a light flash. */
+    (function () {
+      try {
+        var stored = window.localStorage.getItem("santai-zi-docs-theme");
+        var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      } catch (_error) {
+        /* file:// or privacy mode */
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">跳到正文</a>
+  <div class="reading-progress" aria-hidden="true"><span id="reading-progress-bar"></span></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="三太子文档首页">
+        <span class="brand-mark" aria-hidden="true">太</span>
+        <span class="brand-text">
+          <strong>三太子</strong>
+          <small>SanTaiZi</small>
+        </span>
+      </a>
+
+      <div class="topbar-actions">
+        <span class="version-pill">v1.2.0</span>
+        <button class="icon-button search-trigger" id="search-trigger" type="button" aria-label="搜索文档">
+          <span class="search-icon" aria-hidden="true"></span>
+          <span class="search-label">搜索</span>
+          <kbd>⌘ K</kbd>
+        </button>
+        <a class="icon-button github-link" href="https://github.com/ctkqiang/SanTaiZi" target="_blank" rel="noreferrer" aria-label="GitHub 仓库">
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><path fill="currentColor" d="M12 .7a11.3 11.3 0 0 0-3.6 22c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.7-1.3-1.7-1.1-.8.1-.8.1-.8 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.4-1.3-5.4-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.4 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.3 11.3 0 0 0 12 .7Z"/></svg>
+        </a>
+        <button class="icon-button theme-toggle" id="theme-toggle" type="button" aria-label="切换深浅色主题" aria-pressed="false">
+          <span class="theme-icon" aria-hidden="true">☾</span>
+        </button>
+        <button class="icon-button menu-toggle" id="menu-toggle" type="button" aria-label="打开目录" aria-controls="sidebar" aria-expanded="false">
+          <span aria-hidden="true">☰</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout" id="top">
+    <aside class="sidebar" id="sidebar" aria-label="文档目录">
+      <div class="sidebar-inner">
+        <div class="search-box">
+          <label class="sr-only" for="doc-search">搜索文档</label>
+          <input id="doc-search" type="search" placeholder="搜索章节、命令、API…" autocomplete="off" spellcheck="false">
+          <button class="search-clear" id="search-clear" type="button" aria-label="清空搜索">×</button>
+        </div>
+        <p class="search-empty" id="search-empty" hidden>没有匹配的章节。</p>
+
+        <nav class="toc" id="toc">
+          <p class="toc-group">开始</p>
+          <a class="nav-link" href="#overview">项目概览</a>
+          <a class="nav-link" href="#capabilities">能力范围</a>
+          <a class="nav-link" href="#quickstart">快速开始</a>
+          <a class="nav-link" href="#how-it-works">工作原理</a>
+
+          <p class="toc-group">技术</p>
+          <a class="nav-link" href="#architecture">架构与目录</a>
+          <a class="nav-link" href="#sdk">SDK 与 API</a>
+          <a class="nav-link" href="#modules">内置模块</a>
+          <a class="nav-link" href="#console">控制台与命令行</a>
+          <a class="nav-link" href="#termux">Termux / 窄终端</a>
+
+          <p class="toc-group">参与</p>
+          <a class="nav-link" href="#contribute">贡献指南</a>
+          <a class="nav-link" href="#module-tutorial">从零写一个模块</a>
+          <a class="nav-link" href="#pull-request">提交 Pull Request</a>
+          <a class="nav-link" href="#security">安全与合规</a>
+          <a class="nav-link" href="#partners">寻找合作伙伴</a>
+
+          <p class="toc-group">参考</p>
+          <a class="nav-link" href="#faq">常见问题</a>
+          <a class="nav-link" href="#license">许可证</a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a href="https://github.com/ctkqiang/SanTaiZi" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a>
+          <a href="https://github.com/ctkqiang/SanTaiZi/blob/main/README.md" target="_blank" rel="noreferrer">README.md ↗</a>
+          <a href="https://github.com/ctkqiang/SanTaiZi/issues/new?title=%5B%E5%90%88%E4%BD%9C%5D%20" target="_blank" rel="noreferrer">合作 Issue ↗</a>
+          <span>文档版本 v1.2.0</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="sidebar-scrim" id="sidebar-scrim" hidden></div>
+
+    <main class="content" id="content">
+      <section class="hero" id="overview">
+        <div class="hero-copy">
+          <p class="eyebrow">授权测试 · 模块化 · Go</p>
+          <h1>三太子 <span>SanTaiZi</span></h1>
+          <p class="hero-lead">
+            一个用 Go 编写的模块化网络安全框架。控制台动态发现模块，模块在独立进程中执行，
+            通过一套很小的 SDK 把安全能力接入统一的操作界面。
+          </p>
+          <p class="hero-note">
+            适合授权渗透测试、安全教学、内部工具整合与模块化 PoC 管理。
+            默认中文界面，支持 Termux、macOS、Linux；核心模块不依赖外部运行时。
+          </p>
+
+          <div class="hero-actions">
+            <a class="button primary" href="#quickstart">快速开始</a>
+            <a class="button" href="#module-tutorial">写第一个模块</a>
+            <a class="button ghost" href="#partners">合作招募</a>
+          </div>
+
+          <div class="hero-badges" aria-label="项目标签">
+            <span>Go 1.25+</span>
+            <span>动态模块</span>
+            <span>独立进程</span>
+            <span>msfconsole 风格</span>
+            <span>Termux</span>
+          </div>
+        </div>
+
+        <div class="hero-panel">
+          <div class="terminal-card" aria-label="控制台示例">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <em>santaizi</em>
+            </div>
+            <pre><code> ____    _    _   _ _____  _    ___ ________
+/ ___|  / \  | \ | |_   _|/ \  |_ _|__  /_ _|
+\___ \ / _ \ |  \| | | | / _ \  | |  / / | |
+ ___) / ___ \| |\  | | |/ ___ \ | | / /_ | |
+|____/_/   \_\_| \_| |_/_/   \_\___/____|___|
+
+  三太子  ·  模块化网络安全框架  ·  v1.2.0
+
+三太子 &gt; all
+[0] cve_2025_14847
+    cve  CVE: CVE-2025-14847
+    MongoDB zlib 内存泄露提取（仅提取）
+
+三太子 &gt; use 2
+[+] 正在使用模块 php2shell
+三太子 (php2shell) &gt; run</code></pre>
+          </div>
+          <div class="panel-note">
+            <strong>设计目标</strong>
+            <p>让“写一个安全模块”变成一件小事：实现三个方法，编译成独立二进制，框架自动发现。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="capabilities">
+        <div class="section-head">
+          <p class="eyebrow">能力</p>
+          <h2>它能做什么</h2>
+          <p>三太子不是“一个大而全的扫描器”，而是一个把模块、控制台和执行边界组织起来的框架。</p>
+        </div>
+
+        <div class="grid cards">
+          <article class="card">
+            <span class="card-index">01</span>
+            <h3>动态模块发现</h3>
+            <p>框架递归扫描模块目录，只加载可执行文件，通过 <code>--info</code> 读取元数据，不需要重新编译框架。</p>
+          </article>
+          <article class="card">
+            <span class="card-index">02</span>
+            <h3>独立进程执行</h3>
+            <p>每个模块是独立二进制。模块崩溃不会拖垮控制台，参数通过 <code>key=value</code> 传入，结果从标准输出返回。</p>
+          </article>
+          <article class="card">
+            <span class="card-index">03</span>
+            <h3>msfconsole 风格控制台</h3>
+            <p>搜索、选择、查看选项、设置参数、运行、返回。支持 Tab 补全、历史、光标移动、中文/英文界面与窄终端布局。</p>
+          </article>
+          <article class="card">
+            <span class="card-index">04</span>
+            <h3>Go 原生构建与安装</h3>
+            <p><code>go build</code>、<code>go install</code>、<code>make install</code> 都可以。模块不需要额外运行时、解释器或 SaaS 依赖。</p>
+          </article>
+          <article class="card">
+            <span class="card-index">05</span>
+            <h3>内置实战模块</h3>
+            <p>PHP2Shell 被动 triage、向量数据库只读评估、ESP WiFi 测试、MongoDB 内存泄露提取，四个方向开箱可用。</p>
+          </article>
+          <article class="card">
+            <span class="card-index">06</span>
+            <h3>跨平台与 Termux</h3>
+            <p>macOS / Linux / Windows 可构建；Termux 自动切换 ASCII 横幅、纵向模块列表与纵向选项，手机终端也能读。</p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>边界说明</strong>
+          <p>三太子是授权测试工具，不是权限许可。使用前必须确认目标范围、规则与法律边界。框架提供进程隔离与安全扩展点，但不等于完整沙箱；生产环境仍建议配合容器、最小权限账户与网络隔离。</p>
+        </div>
+      </section>
+
+      <section class="section" id="quickstart">
+        <div class="section-head">
+          <p class="eyebrow">快速开始</p>
+          <h2>五分钟跑起来</h2>
+          <p>从仓库检出开始。默认模块目录是当前目录下的 <code>modules</code>，也可以用 <code>SANTAIZI_MODULES_DIR</code> 覆盖。</p>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>准备环境</h3>
+              <p>Go 1.25 或更高版本。需要编译模块时再安装 <code>make</code>；Termux 使用 <code>pkg install golang git make</code>。</p>
+              <pre data-lang="bash"><code>go version
+git --version
+make --version</code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>克隆并构建</h3>
+              <pre data-lang="bash"><code>git clone https://github.com/ctkqiang/SanTaiZi.git
+cd SanTaiZi
+
+# 构建控制台到 ./santaizi
+make santaizi
+
+# 安装四个内置模块到 ./modules/bin
+make install</code></pre>
+              <p>没有 <code>make</code> 时，直接使用 Go：</p>
+              <pre data-lang="bash"><code>go build -o santaizi ./framework
+
+GOBIN="$PWD/modules/bin" go install \
+  ./modules/php2shell \
+  ./modules/vecmap \
+  ./modules/wifisec \
+  ./modules/cve_2025_14847</code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>启动控制台</h3>
+              <pre data-lang="bash"><code>./santaizi -V
+# 三太子 v1.2.0
+
+./santaizi</code></pre>
+              <p>首次启动会打印横幅并加载模块：</p>
+              <pre data-lang="text"><code>[*] 正在加载模块
+[+] 已加载 7 个模块
+    输入 'help' 查看命令；'search &lt;关键词&gt;' 搜索模块。
+
+三太子 &gt;</code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h3>选择并运行模块</h3>
+              <pre data-lang="text"><code>三太子 &gt; all
+三太子 &gt; search php
+三太子 &gt; info 0
+三太子 &gt; use 0
+
+三太子 (php2shell) &gt; set target https://example.com/index.php
+三太子 (php2shell) &gt; set scope bug-bounty-2026
+三太子 (php2shell) &gt; set require_scope true
+三太子 (php2shell) &gt; run</code></pre>
+              <p><code>info &lt;索引&gt;</code> 只查看，不选中；<code>use &lt;索引&gt;</code> 才会进入模块上下文。索引相对上一次 <code>search</code> / <code>all</code> 结果。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout ok">
+          <strong>版本确认</strong>
+          <p>如果你看到旧横幅、<code>all</code> 未知命令或方向键显示成 <code>^[[A</code>，说明启动的是旧二进制。请确认 <code>./santaizi -V</code> 输出 <code>三太子 v1.2.0</code>，并重新执行 <code>make santaizi</code>。</p>
+        </div>
+      </section>
+
+      <section class="section" id="how-it-works">
+        <div class="section-head">
+          <p class="eyebrow">工作原理</p>
+          <h2>框架是怎么跑起来的</h2>
+          <p>核心只有三件事：发现模块、读取元数据、在独立进程中执行模块。没有复杂的插件 ABI，也没有必须链接的运行时。</p>
+        </div>
+
+        <div class="flow" aria-label="模块加载与执行流程">
+          <div class="flow-node accent">控制台<small>internal/structure</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">注册表<small>Registry</small></div>
+          <div class="flow-arrow">←</div>
+          <div class="flow-node">加载器<small>ModuleLoader</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">模块二进制<small>--info / --execute</small></div>
+        </div>
+
+        <div class="grid two">
+          <div class="panel">
+            <h3>启动阶段</h3>
+            <ol class="clean-list">
+              <li><strong>确定目录：</strong>读取 <code>SANTAIZI_MODULES_DIR</code>；未设置时使用 <code>./modules</code>。</li>
+              <li><strong>递归扫描：</strong><code>filepath.Walk</code> 遍历目录，只处理有可执行权限的文件，跳过名为 <code>santaizi</code> 的主程序。</li>
+              <li><strong>元数据握手：</strong>执行 <code>&lt;module&gt; --info</code>，解析 <code>name:</code>、<code>description:</code>、<code>cnvd:</code>、<code>cve:</code> 和 <code>option:</code> 行。</li>
+              <li><strong>登记：</strong>Loader 把路径、名称、描述、类型、选项写入 Registry，控制台通过它搜索和访问模块。</li>
+            </ol>
+          </div>
+
+          <div class="panel">
+            <h3>执行阶段</h3>
+            <ol class="clean-list">
+              <li><strong>选择模块：</strong><code>use &lt;索引|名称&gt;</code> 设置当前模块并初始化默认选项。</li>
+              <li><strong>配置：</strong><code>set</code> / <code>setg</code> 写入配置；控制台检查必填项。</li>
+              <li><strong>执行：</strong>Loader 运行 <code>&lt;module&gt; --execute key=value …</code>，模块的 <code>Init</code> 接收参数，<code>Run</code> 执行逻辑。</li>
+              <li><strong>回传：</strong>模块把报告写到标准输出；非零退出或 <code>error:</code> 前缀会被框架识别为失败。</li>
+            </ol>
+          </div>
+        </div>
+
+        <h3 class="subhead">命令行契约</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>接口</th><th>方向</th><th>格式</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>--info</code></td><td>框架 → 模块</td><td>标准输出文本</td><td>模块被加载时调用；必须只输出元数据，不发起网络请求。</td></tr>
+              <tr><td><code>--execute</code></td><td>框架 → 模块</td><td><code>key=value</code></td><td>运行模块；多个选项作为多个参数传入，值可以包含 <code>=</code>（按第一个 <code>=</code> 拆分）。</td></tr>
+              <tr><td>标准输出</td><td>模块 → 框架</td><td>纯文本报告</td><td>显示在控制台“结果”区域；模块也可以输出多行文本。</td></tr>
+              <tr><td>标准错误</td><td>模块 → 终端（直接运行时）</td><td>警告/横幅</td><td>授权提示、调试信息写 stderr。注意：框架执行时只回传 stdout；希望框架用户看到的声明应同时写入报告。</td></tr>
+              <tr><td><code>error:</code> 前缀</td><td>模块 → 框架</td><td><code>error:消息</code></td><td>执行失败时使用；Loader 会把它转换成框架错误。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>为什么是独立进程？</strong>
+          <p>模块可以用不同依赖、不同并发模型，甚至不同语言实现（只要遵守 CLI 契约）。框架不需要把第三方代码链接进主程序；模块崩溃、泄漏或死循环的爆炸半径也更小。代价是每次执行都有进程启动成本，且模块之间不能直接共享内存。</p>
+        </div>
+
+        <div class="callout warn">
+          <strong>运行环境</strong>
+          <p>模块进程继承框架启动时的工作目录，不会自动切换到模块目录；<code>output=leak.bin</code> 这样的相对路径会落在启动框架的目录。每次 <code>run</code> 都会启动新进程，<code>Init</code> 中的状态不会跨次保留。需要稳定位置时使用绝对路径或显式目录选项。</p>
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="section-head">
+          <p class="eyebrow">架构</p>
+          <h2>代码结构与职责边界</h2>
+          <p>框架是“薄”的：控制台、注册表、加载器和 SDK 各司其职。模块作者只需要关心 <code>sdk</code>，不需要改引擎。</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>路径</th><th>职责</th><th>模块作者需要改吗</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>framework/</code></td><td>程序入口、CLI 参数、控制台接线</td><td>否</td></tr>
+              <tr><td><code>internal/core/loader.go</code></td><td>扫描目录、执行 <code>--info</code> / <code>--execute</code>、错误传递</td><td>否</td></tr>
+              <tr><td><code>internal/core/registry.go</code></td><td>模块登记、列表、搜索、按 ID 查询</td><td>否</td></tr>
+              <tr><td><code>internal/structure/console.go</code></td><td>控制台命令、表格、中文/英文、Termux 布局</td><td>否</td></tr>
+              <tr><td><code>internal/structure/lineeditor.go</code></td><td>raw-mode 行编辑、历史、补全、Ctrl 键</td><td>否</td></tr>
+              <tr><td><code>internal/security/security.go</code></td><td>进程执行安全选项的扩展点</td><td>否</td></tr>
+              <tr><td><code>sdk/base.go</code></td><td>模块接口、<code>BaseModule</code>、<code>RunModule</code></td><td>是（只使用，不修改）</td></tr>
+              <tr><td><code>modules/&lt;name&gt;/main.go</code></td><td>你的模块</td><td>是</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-tree" aria-label="仓库结构">
+          <div><span>SanTaiZi/</span></div>
+          <div class="indent"><span>framework/</span><em>入口、控制台接线</em></div>
+          <div class="indent"><span>internal/</span><em>引擎：loader、registry、console、security</em></div>
+          <div class="indent"><span>sdk/</span><em>模块唯一需要导入的包</em></div>
+          <div class="indent"><span>modules/</span><em>每个模块一个目录，package main</em></div>
+          <div class="indent2"><span>bin/</span><em>构建/安装后的可执行模块</em></div>
+          <div class="indent"><span>doc/</span><em>文档站点与规范</em></div>
+          <div class="indent"><span>Makefile</span><em>build / install / test / lint</em></div>
+        </div>
+
+        <div class="grid two">
+          <div class="panel">
+            <h3>技术视角</h3>
+            <p>控制台通过 Registry 查询模块，通过 Loader 执行模块。Loader 不解析模块内部实现，只遵守 CLI 协议。模块的“类型”取名称前三个字符（例如 <code>php2shell → php</code>、<code>vecmap → vec</code>），用于展示，不参与调度。</p>
+            <p>选项在控制台侧保存为字符串映射；Loader 拼成 <code>key=value</code> 参数。SDK 的 <code>RunModule</code> 用 <code>flag</code> 解析 <code>--info</code> / <code>--execute</code>，再把选项交给模块。</p>
+          </div>
+          <div class="panel">
+            <h3>开发者视角</h3>
+            <p>你写一个 <code>package main</code>，实现 <code>sdk.Module</code> 的三个方法，嵌入 <code>sdk.BaseModule</code>，在 <code>main</code> 里调用 <code>sdk.RunModule</code>。然后编译成可执行文件放进模块目录，框架就能发现它。</p>
+            <p>不要把模块链接进框架，也不要导入 <code>internal/*</code>。模块与框架之间只通过 SDK 和 CLI 契约通信。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="sdk">
+        <div class="section-head">
+          <p class="eyebrow">SDK / API</p>
+          <h2>模块作者应该使用哪些 API</h2>
+          <p>唯一需要导入的包是 <code>santaizi/sdk</code>。不要把 <code>internal/core</code>、<code>internal/structure</code> 当成模块 API；它们是框架内部实现，可能变化。</p>
+        </div>
+
+        <h3 class="subhead">核心接口</h3>
+        <pre data-lang="go"><code>type Module interface {
+    Info() ModuleConfig
+    Init(options map[string]string) error
+    Run() (string, error)
+}</code></pre>
+
+        <div class="grid two">
+          <div class="panel">
+            <h3><code>Info()</code></h3>
+            <p>返回静态元数据。控制台和加载器会在加载阶段调用。这里不要发起网络请求、不要读大文件，也不要依赖运行环境。</p>
+            <ul class="clean-list">
+              <li><code>Name</code>：模块名，建议小写加下划线。</li>
+              <li><code>Description</code>：一行说明，中文或英文都可以。</li>
+              <li><code>Options</code>：参数定义。</li>
+              <li><code>CNVD</code> / <code>CVE</code>：有编号就填写。</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3><code>Init()</code></h3>
+            <p>接收框架传入的选项，负责校验和设置默认值。SDK 不会自动把 <code>Info</code> 里的 <code>Default</code> 注入到 <code>Config</code>，所以你要自己合并默认值。</p>
+            <ul class="clean-list">
+              <li>先构造默认配置，再覆盖传入值。</li>
+              <li>校验必填项、URL、端口、路径。</li>
+              <li>不要在这里执行攻击性动作。</li>
+              <li>返回错误会让框架停止执行 <code>Run</code>。</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3><code>Run()</code></h3>
+            <p>真正的工作在这里。返回一个可直接给用户阅读的报告字符串；失败返回 <code>error</code>。</p>
+            <ul class="clean-list">
+              <li>使用 <code>context</code> 和超时。</li>
+              <li>限制响应体、记录数量和并发。</li>
+              <li>不要 <code>panic</code>，不要 <code>os.Exit</code>。</li>
+              <li>不要执行目标返回的指令，不要把目标数据当命令。</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3><code>sdk.RunModule()</code></h3>
+            <p>模块入口。<code>main</code> 里固定写：</p>
+            <pre data-lang="go"><code>func main() {
+    sdk.RunModule(&amp;MyModule{})
+}</code></pre>
+            <p>它负责解析 <code>--info</code> 和 <code>--execute</code>，打印模块信息或调用 <code>Init</code> / <code>Run</code>。</p>
+          </div>
+        </div>
+
+        <h3 class="subhead">数据结构</h3>
+        <pre data-lang="go"><code>type ModuleConfig struct {
+    Name        string
+    Description string
+    Options     []Option
+    CNVD        string
+    CVE         string
+}
+
+type Option struct {
+    Name     string
+    Type     string   // string / int / bool
+    Required bool
+    Default  string
+}
+
+type BaseModule struct {
+    Config map[string]string
+}
+
+func (b *BaseModule) GetOption(name string) string</code></pre>
+
+        <div class="callout">
+          <strong>默认值与必填项</strong>
+          <p><code>Info().Options[].Default</code> 只是展示给控制台的元数据，不会自动写入 <code>Config</code>。模块必须在 <code>Init</code> 中设置默认值。SDK 也不会强制 <code>Required</code>；控制台会检查，但独立运行 <code>--execute</code> 时必须由模块自己校验。</p>
+        </div>
+
+        <h3 class="subhead">API 使用边界</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>可以使用</th><th>不要使用</th><th>原因</th></tr></thead>
+            <tbody>
+              <tr><td><code>sdk.Module</code></td><td>自己发明新的模块接口</td><td>框架只认识这一个契约。</td></tr>
+              <tr><td><code>sdk.BaseModule</code> / <code>GetOption</code></td><td>复制一套配置解析器</td><td>保持选项行为一致。</td></tr>
+              <tr><td><code>sdk.ModuleConfig</code> / <code>sdk.Option</code></td><td>用匿名 map 返回元数据</td><td>Loader 依赖固定字段。</td></tr>
+              <tr><td><code>sdk.RunModule</code></td><td>自己解析 <code>--info</code> / <code>--execute</code></td><td>避免与框架的 CLI 契约分叉。</td></tr>
+              <tr><td>标准库</td><td><code>internal/core</code> / <code>internal/structure</code></td><td>内部包不是稳定 API，且模块是独立进程。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="subhead">选项类型</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>类型</th><th>控制台表现</th><th>模块侧处理</th></tr></thead>
+            <tbody>
+              <tr><td><code>string</code></td><td>原样保存</td><td>校验空值、URL、路径、长度。</td></tr>
+              <tr><td><code>int</code></td><td>控制台提示必须是整数</td><td>用 <code>strconv.Atoi</code> 再校验范围。</td></tr>
+              <tr><td><code>bool</code></td><td>接受 true/false/yes/no/on/off</td><td>统一转成 <code>true</code> / <code>false</code> 后判断。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="modules">
+        <div class="section-head">
+          <p class="eyebrow">内置模块</p>
+          <h2>内置模块</h2>
+          <p>四个新模块覆盖 Web、向量数据库、无线和 MongoDB 四个方向。它们同时也是可以阅读的示例代码。</p>
+        </div>
+
+        <div class="grid cards module-grid">
+          <article class="card module-card">
+            <div class="module-head"><h3>php2shell</h3><span class="tag">Web / PHP</span></div>
+            <p>PHP2Shell 漏洞类的被动暴露分析。根路径 + 随机 canary，检测 soft-404、登录墙、限流、PHP 版本、SAPI、WAF/CDN。</p>
+            <ul class="mini-list">
+              <li><code>target</code>：PHP 端点 URL</li>
+              <li><code>scope</code> / <code>require_scope</code>：授权范围门控</li>
+              <li><code>exploit</code>：POC 门控，默认关闭</li>
+            </ul>
+            <pre data-lang="bash"><code>./modules/bin/php2shell --execute \
+  target=https://example.com/index.php \
+  scope=bug-bounty-2026 \
+  require_scope=true</code></pre>
+            <p class="fine">仅 GET；上游 POST/multipart POC 未移植，不会自动触发。</p>
+          </article>
+
+          <article class="card module-card">
+            <div class="module-head"><h3>vecmap</h3><span class="tag">向量数据库</span></div>
+            <p>Qdrant、Milvus、Weaviate、Chroma、Redis、Elasticsearch、OpenSearch、pgvector、Typesense、Pinecone、Vespa 的只读攻击面评估。</p>
+            <ul class="mini-list">
+              <li><code>target</code>：URL / 域名 / IP / CIDR</li>
+              <li><code>adapter</code>：默认 auto</li>
+              <li><code>deep</code>：有界记录抽样</li>
+              <li><code>evidence_dir</code>：SQLite WAL 证据目录</li>
+            </ul>
+            <pre data-lang="bash"><code>./modules/bin/vecmap --execute \
+  target=http://127.0.0.1:6333 \
+  adapter=auto deep=true \
+  evidence_dir=./evidence</code></pre>
+            <p class="fine">硬拒绝 /management/stop、/delete、/drop、/upsert 等破坏性路径。</p>
+          </article>
+
+          <article class="card module-card">
+            <div class="module-head"><h3>wifisec</h3><span class="tag">无线 / ESP</span></div>
+            <p>ESP8266/ESP32 协处理器上的 WiFi 扫描、802.11 deauth 帧构造与注入、串口诊断。主机不需要 root。</p>
+            <ul class="mini-list">
+              <li><code>serial_port</code>：串口设备</li>
+              <li><code>ssid</code> / <code>bssid</code>：目标选择</li>
+              <li><code>action</code>：scan / deauth / diagnose</li>
+            </ul>
+            <pre data-lang="bash"><code>./modules/bin/wifisec --execute \
+  serial_port=/dev/ttyUSB0 \
+  action=scan</code></pre>
+            <p class="fine">deauth 前打印完整法律红线；原生串口路径支持 macOS/Linux。</p>
+          </article>
+
+          <article class="card module-card">
+            <div class="module-head"><h3>cve_2025_14847</h3><span class="tag">MongoDB</span></div>
+            <p>MongoDB zlib 堆内存泄露提取。连接、发送构造的 OP_COMPRESSED 请求、捕获返回的堆字节，并做脱敏凭据模式匹配。</p>
+            <ul class="mini-list">
+              <li><code>target</code>：host:port / mongodb://</li>
+              <li><code>output</code>：默认 leak.bin</li>
+              <li><code>safe_mode</code>：默认 true，限制在 4 KiB</li>
+            </ul>
+            <pre data-lang="bash"><code>./modules/bin/cve_2025_14847 --execute \
+  target=127.0.0.1:27017 \
+  output=leak.bin safe_mode=true</code></pre>
+            <p class="fine">仅提取；不会验证、重放、填充或使用泄露到的凭据。</p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>如何查看全部</strong>
+          <p>控制台执行 <code>all</code> / <code>全部</code> / <code>所有</code>；或运行 <code>./santaizi -c "all"</code>。用 <code>info &lt;索引&gt;</code> 查看详情，用 <code>use &lt;索引&gt;</code> 选中。</p>
+        </div>
+      </section>
+
+      <section class="section" id="console">
+        <div class="section-head">
+          <p class="eyebrow">控制台</p>
+          <h2>控制台与命令行</h2>
+          <p>交互模式默认中文；命令名保持英文，同时提供中文别名。非交互模式不会打印横幅或提示符，适合管道和脚本。</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>命令</th><th>作用</th><th>备注</th></tr></thead>
+            <tbody>
+              <tr><td><code>all</code> / <code>全部</code></td><td>列出全部模块</td><td>索引相对该列表</td></tr>
+              <tr><td><code>search [词]</code> / <code>ls</code></td><td>搜索模块</td><td>不带词列出全部</td></tr>
+              <tr><td><code>use &lt;索引|名称&gt;</code></td><td>选中模块</td><td>进入模块上下文</td></tr>
+              <tr><td><code>info [索引|名称]</code></td><td>查看模块详情</td><td>不改变当前模块</td></tr>
+              <tr><td><code>show options</code> / <code>options</code></td><td>查看选项</td><td><code>opt</code> / <code>opts</code> 也可</td></tr>
+              <tr><td><code>set &lt;选项&gt; &lt;值&gt;</code></td><td>设置选项</td><td>bool/int 会校验</td></tr>
+              <tr><td><code>setg &lt;选项&gt; &lt;值&gt;</code></td><td>设置全局选项</td><td>后续模块继承</td></tr>
+              <tr><td><code>unset</code> / <code>unsetg</code></td><td>恢复默认 / 删除全局</td><td></td></tr>
+              <tr><td><code>run</code> / <code>exploit</code></td><td>运行当前模块</td><td>检查必填项</td></tr>
+              <tr><td><code>back</code></td><td>退出当前模块</td><td></td></tr>
+              <tr><td><code>history</code> / <code>clear</code></td><td>历史 / 清屏</td><td></td></tr>
+              <tr><td><code>lang [中|英]</code></td><td>切换界面语言</td><td>默认中文</td></tr>
+              <tr><td><code>color [开|关]</code></td><td>切换颜色</td><td>尊重 <code>NO_COLOR</code></td></tr>
+              <tr><td><code>!&lt;命令&gt;</code> / <code>shell</code></td><td>执行 shell 命令</td><td>显式 shell 转义</td></tr>
+              <tr><td><code>exit</code> / <code>q</code></td><td>退出</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid two">
+          <div class="panel">
+            <h3>命令行参数</h3>
+            <pre data-lang="bash"><code>./santaizi -h
+./santaizi -V
+./santaizi --no-color
+./santaizi -m ./modules
+./santaizi -c "all"
+./santaizi -c "info php2shell"</code></pre>
+            <p><code>-c</code> 执行单条命令后退出；需要连续执行多条命令时使用管道。</p>
+          </div>
+          <div class="panel">
+            <h3>行编辑</h3>
+            <ul class="clean-list">
+              <li><code>↑</code> / <code>↓</code>：命令历史</li>
+              <li><code>←</code> / <code>→</code>：移动光标</li>
+              <li><code>Tab</code>：命令 / 模块 / 选项补全</li>
+              <li><code>Ctrl-A/E/U/K/W/L</code>：行编辑</li>
+              <li><code>Ctrl-C</code>：取消当前行</li>
+              <li><code>Ctrl-D</code>：空行退出</li>
+            </ul>
+            <p>拼写错误会给出建议，例如 <code>opyions</code> → <code>options</code>。</p>
+          </div>
+        </div>
+
+        <h3 class="subhead">环境变量</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>变量</th><th>作用</th><th>默认</th></tr></thead>
+            <tbody>
+              <tr><td><code>SANTAIZI_MODULES_DIR</code></td><td>模块目录；会被 <code>-m</code> 覆盖</td><td><code>./modules</code></td></tr>
+              <tr><td><code>SANTAIZI_LANG</code></td><td><code>en</code> 切换英文界面；<code>zh</code> 保持中文</td><td>中文</td></tr>
+              <tr><td><code>NO_COLOR</code></td><td>设置任意非空值即可禁用 ANSI 颜色</td><td>未设置</td></tr>
+              <tr><td><code>TERM</code></td><td><code>dumb</code> 时禁用 ANSI 颜色</td><td>终端决定</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="termux">
+        <div class="section-head">
+          <p class="eyebrow">Termux</p>
+          <h2>Termux / 窄终端</h2>
+          <p>界面会按终端宽度自动切换，不要求手机横屏。Termux 通过 <code>TERMUX_VERSION</code> / <code>PREFIX</code> 自动识别，即使宽度大于 90 列也使用纵向列表。</p>
+        </div>
+
+        <div class="grid two">
+          <div class="panel">
+            <h3>安装与构建</h3>
+            <pre data-lang="bash"><code>pkg install golang git make
+git clone https://github.com/ctkqiang/SanTaiZi.git
+cd SanTaiZi
+make santaizi
+./santaizi</code></pre>
+            <p>没有 <code>make</code> 时：</p>
+            <pre data-lang="bash"><code>go build -o santaizi ./framework
+./santaizi</code></pre>
+          </div>
+          <div class="panel">
+            <h3>窄终端布局</h3>
+            <ul class="clean-list">
+              <li>非 Termux 且 <code>≥ 96</code> 列：ANSI Shadow 横幅 + 宽模块表格（最多 100 列）</li>
+              <li>非 Termux 且 <code>90–95</code> 列：ANSI 横幅 + 宽选项表格，模块仍为纵向列表</li>
+              <li>Termux（任意宽度）或 <code>48–89</code> 列：ASCII 横幅 + 纵向模块/选项列表</li>
+              <li><code>&lt; 48</code> 列：紧凑横幅</li>
+              <li>超长 CVE、描述与选项值按终端宽度换行；模块名过长时截断</li>
+            </ul>
+            <p>Termux 额外键：<code>Tab</code> 补全；方向键历史/光标；音量键 + 字母发送 Ctrl 组合键。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="contribute">
+        <div class="section-head">
+          <p class="eyebrow">贡献</p>
+          <h2>如何参与贡献</h2>
+          <p>你不需要先读完整个引擎。贡献可以从文档、测试、一个小模块或一个 bug 修复开始。原则是：改动小、边界清楚、可复现、可审查。</p>
+        </div>
+
+        <div class="contribute-path" aria-label="贡献路径">
+          <div><span>1</span><strong>选一个切入点</strong><small>文档 / 测试 / 小模块 / bug</small></div>
+          <div><span>2</span><strong>Fork + 分支</strong><small>feat/、fix/、docs/</small></div>
+          <div><span>3</span><strong>实现 + 自测</strong><small>build / vet / test / lint</small></div>
+          <div><span>4</span><strong>提交 PR</strong><small>说明动机、证据、风险</small></div>
+          <div><span>5</span><strong>评审与合并</strong><small>小步迭代</small></div>
+        </div>
+
+        <h3 class="subhead">第 1 步：准备环境</h3>
+        <pre data-lang="bash"><code>git clone https://github.com/ctkqiang/SanTaiZi.git
+cd SanTaiZi
+
+go version        # Go 1.25+
+make test         # go test ./...
+make vet          # go vet framework + internal/structure + sdk + modules
+make lint         # 可选，需要 golangci-lint v2.x</code></pre>
+
+        <h3 class="subhead">第 2 步：Fork 并创建分支</h3>
+        <pre data-lang="bash"><code>git checkout -b feat/module-example-http
+
+# 或者
+git checkout -b fix/console-search-index
+git checkout -b docs/termux-guide</code></pre>
+
+        <h3 class="subhead">第 3 步：遵守代码约定</h3>
+        <div class="grid two">
+          <div class="panel">
+            <h3>必须</h3>
+            <ul class="clean-list">
+              <li><code>gofmt</code> 格式化；遵循 Go 习惯。</li>
+              <li>错误用 <code>fmt.Errorf("...: %w", err)</code> 包装。</li>
+              <li>网络请求设置超时、限制响应大小。</li>
+              <li>目标数据视为不可信输入，做清洗与截断。</li>
+              <li>模块只导入 <code>santaizi/sdk</code> 和标准库（或已存在的依赖）。</li>
+              <li>新增模块要有 <code>--info</code> / <code>--execute</code> 冒烟测试。</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>避免</h3>
+            <ul class="clean-list">
+              <li>不要修改 <code>internal/</code>、<code>sdk/</code> 来“适配”单个模块。</li>
+              <li>不要 <code>panic</code>、<code>os.Exit</code> 或无限重试。</li>
+              <li>不要默认执行破坏性动作；危险能力必须显式开启。</li>
+              <li>不要把密钥、Cookie、Token 写进日志或报告。</li>
+              <li>不要在一个 PR 里混合无关重构。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>关于仓库里的旧规范</strong>
+          <p><a href="https://github.com/ctkqiang/SanTaiZi/blob/main/doc/CODE_STANDARD.md" target="_blank" rel="noreferrer">CODE_STANDARD.md</a>、<a href="https://github.com/ctkqiang/SanTaiZi/blob/main/doc/HOW_TO_SUBMIT.md" target="_blank" rel="noreferrer">HOW_TO_SUBMIT.md</a> 和 <a href="https://github.com/ctkqiang/SanTaiZi/blob/main/doc/SECURITY.md" target="_blank" rel="noreferrer">SECURITY.md</a> 是早期文档。其中缩进、命名等部分条目与 <code>gofmt</code> 和当前代码不一致，以本页与现有代码为准；提交流程、安全边界仍可参考。</p>
+        </div>
+
+        <h3 class="subhead">第 4 步：验证</h3>
+        <pre data-lang="bash"><code>gofmt -w modules/your_module/main.go
+
+go build ./...
+go vet ./modules/your_module
+go test ./...
+
+# 如果安装了 v2.x
+golangci-lint run ./modules/your_module
+
+# 模块冒烟
+./modules/bin/your_module --info
+./modules/bin/your_module --execute target=https://example.com/</code></pre>
+
+        <h3 class="subhead">第 5 步：提交信息</h3>
+        <p>建议使用 Conventional Commits：</p>
+        <pre data-lang="text"><code>feat(modules): add example_http read-only header analyzer
+fix(console): resolve relative module index after search
+docs(readme): document Termux build and narrow layout
+test(loader): cover leading-space module metadata</code></pre>
+      </section>
+
+      <section class="section" id="module-tutorial">
+        <div class="section-head">
+          <p class="eyebrow">教程</p>
+          <h2>从零写一个模块</h2>
+          <p>下面实现一个最小但完整的模块：对目标 URL 发一次 GET，输出状态码、Content-Type 和页面标题。它演示了元数据、默认值、授权横幅、超时、响应限制、错误处理和 <code>main</code> 入口。</p>
+        </div>
+
+        <div class="callout warn">
+          <strong>先确认授权</strong>
+          <p>示例会访问目标。请只对你拥有或获得明确书面授权的系统运行。模块里不要默认执行攻击、写入、删除或认证尝试。</p>
+        </div>
+
+        <h3 class="subhead">第 1 步：创建目录</h3>
+        <pre data-lang="bash"><code>mkdir -p modules/example_http
+$EDITOR modules/example_http/main.go</code></pre>
+
+        <h3 class="subhead">第 2 步：完整代码</h3>
+        <pre data-lang="go"><code>package main
+
+import (
+    "context"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "regexp"
+    "strconv"
+    "strings"
+    "time"
+
+    "santaizi/sdk"
+)
+
+var _ sdk.Module = (*ExampleHTTPModule)(nil)
+
+var titleRE = regexp.MustCompile(`(?is)&lt;title[^&gt;]*&gt;(.*?)&lt;/title&gt;`)
+
+type ExampleHTTPModule struct {
+    sdk.BaseModule
+}
+
+func (m *ExampleHTTPModule) Info() sdk.ModuleConfig {
+    return sdk.ModuleConfig{
+        Name:        "example_http",
+        Description: "只读 HTTP 头部分析示例模块。",
+        Options: []sdk.Option{
+            {Name: "target", Type: "string", Required: true, Default: ""},
+            {Name: "timeout", Type: "int", Required: false, Default: "8"},
+        },
+    }
+}
+
+func (m *ExampleHTTPModule) Init(options map[string]string) error {
+    m.Config = map[string]string{
+        "target":  "",
+        "timeout": "8",
+    }
+    for key, value := range options {
+        m.Config[key] = value
+    }
+
+    _, _ = fmt.Fprintln(os.Stderr,
+        "AUTHORIZED TESTING ONLY: example_http sends one GET request. Confirm written authorization first.")
+
+    target := strings.TrimSpace(m.GetOption("target"))
+    if target == "" {
+        return fmt.Errorf("example_http: option \"target\" is required")
+    }
+    if !strings.HasPrefix(target, "http://") &amp;&amp; !strings.HasPrefix(target, "https://") {
+        return fmt.Errorf("example_http: target must start with http:// or https://")
+    }
+    m.Config["target"] = target
+
+    timeout, err := strconv.Atoi(m.GetOption("timeout"))
+    if err != nil || timeout &lt; 1 || timeout &gt; 60 {
+        return fmt.Errorf("example_http: timeout must be an integer between 1 and 60")
+    }
+    return nil
+}
+
+func (m *ExampleHTTPModule) Run() (string, error) {
+    timeout, _ := strconv.Atoi(m.GetOption("timeout"))
+    ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+    defer cancel()
+
+    request, err := http.NewRequestWithContext(ctx, http.MethodGet, m.GetOption("target"), http.NoBody)
+    if err != nil {
+        return "", fmt.Errorf("example_http: build request: %w", err)
+    }
+    request.Header.Set("User-Agent", "SanTaiZi-example_http/1.0 (authorized testing)")
+    request.Header.Set("Accept", "text/html,application/xhtml+xml")
+
+    response, err := http.DefaultClient.Do(request)
+    if err != nil {
+        return "", fmt.Errorf("example_http: request failed: %w", err)
+    }
+    defer func() {
+        _ = response.Body.Close()
+    }()
+
+    body, err := io.ReadAll(io.LimitReader(response.Body, 64*1024))
+    if err != nil {
+        return "", fmt.Errorf("example_http: read body: %w", err)
+    }
+
+    title := ""
+    if match := titleRE.FindSubmatch(body); len(match) == 2 {
+        title = strings.TrimSpace(string(match[1]))
+        if len(title) &gt; 120 {
+            title = title[:120]
+        }
+    }
+    if title == "" {
+        title = "(no title)"
+    }
+
+    return fmt.Sprintf(
+        "example_http — READ-ONLY HTTP PROBE\nTarget: %s\nStatus: %d\nContent-Type: %s\nTitle: %s\n",
+        m.GetOption("target"),
+        response.StatusCode,
+        response.Header.Get("Content-Type"),
+        title,
+    ), nil
+}
+
+func main() {
+    sdk.RunModule(&amp;ExampleHTTPModule{})
+}</code></pre>
+
+        <div class="grid two">
+          <div class="panel">
+            <h3>这段代码在做什么</h3>
+            <ol class="clean-list">
+              <li><code>Info</code> 声明名称、描述、选项和默认值。</li>
+              <li><code>Init</code> 先设置默认值，再合并框架传入的选项；校验 target 和 timeout。</li>
+              <li><code>Run</code> 使用带超时的 context 发一次 GET，限制读取 64 KiB。</li>
+              <li>输出纯文本报告；失败返回 error，不 panic。</li>
+              <li><code>main</code> 调用 <code>sdk.RunModule</code>，由 SDK 处理 <code>--info</code> / <code>--execute</code>。</li>
+            </ol>
+          </div>
+          <div class="panel">
+            <h3>为什么这样写</h3>
+            <ul class="clean-list">
+              <li><strong>不依赖内部引擎：</strong>模块可以单独复制、单独编译。</li>
+              <li><strong>默认值显式：</strong>SDK 不注入 Info 默认值，Init 必须自己合并。</li>
+              <li><strong>失败可读：</strong>错误带模块名前缀和上下文。</li>
+              <li><strong>有边界：</strong>一次请求、超时、响应上限，避免误伤。</li>
+              <li><strong>输出稳定：</strong>结果写 stdout；调试与横幅写 stderr。需要框架用户看到的声明请同时写进报告。</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="subhead">第 3 步：构建</h3>
+        <pre data-lang="bash"><code>mkdir -p modules/bin
+(cd modules/example_http &amp;&amp; go build -o ../bin/example_http .)
+
+# 或者安装到框架模块目录
+GOBIN="$PWD/modules/bin" go install ./modules/example_http</code></pre>
+
+        <h3 class="subhead">第 4 步：验证 CLI 契约</h3>
+        <pre data-lang="bash"><code>./modules/bin/example_http --info</code></pre>
+        <pre data-lang="text"><code>name:example_http
+description:只读 HTTP 头部分析示例模块。
+cnvd:
+cve:
+option:target:string:true:
+option:timeout:int:false:8</code></pre>
+        <pre data-lang="bash"><code>./modules/bin/example_http --execute target=https://example.com/ timeout=5</code></pre>
+
+        <h3 class="subhead">第 5 步：在框架里运行</h3>
+        <pre data-lang="bash"><code>export SANTAIZI_MODULES_DIR="$PWD/modules"
+./santaizi</code></pre>
+        <pre data-lang="text"><code>三太子 &gt; search example
+三太子 &gt; info 0
+三太子 &gt; use 0
+三太子 (example_http) &gt; set target https://example.com/
+三太子 (example_http) &gt; set timeout 5
+三太子 (example_http) &gt; run</code></pre>
+
+        <h3 class="subhead">第 6 步：加测试</h3>
+        <p>把纯逻辑拆成小函数，用 <code>go test</code> 覆盖边界。例如把 target 校验拆成 <code>validateTarget</code>，然后写表驱动测试：</p>
+        <pre data-lang="go"><code>package main
+
+import "testing"
+
+func TestValidateTarget(t *testing.T) {
+    tests := []struct {
+        name    string
+        target  string
+        wantErr bool
+    }{
+        {"https", "https://example.com/", false},
+        {"http", "http://127.0.0.1:8080/", false},
+        {"missing scheme", "example.com", true},
+        {"empty", "", true},
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            if err := validateTarget(tt.target); (err != nil) != tt.wantErr {
+                t.Fatalf("validateTarget(%q) error = %v, wantErr %v", tt.target, err, tt.wantErr)
+            }
+        })
+    }
+}</code></pre>
+        <p>真实提交里请把示例中的校验逻辑抽成 <code>validateTarget</code> 再测试。测试不应访问外网。</p>
+
+        <h3 class="subhead">第 7 步：补文档</h3>
+        <ul class="clean-list">
+          <li>在模块目录或 <code>doc/</code> 写清选项、示例、授权要求、限制。</li>
+          <li>如果模块有危险能力，明确默认关闭、如何开启、可能影响。</li>
+          <li>在 PR 描述里写测试命令和真实输出摘要（不要贴敏感数据）。</li>
+        </ul>
+
+        <div class="callout ok">
+          <strong>最小提交清单</strong>
+          <p><code>modules/example_http/main.go</code> + 测试（建议） + 文档（建议） + 可复现的 <code>--info</code>/<code>--execute</code> 输出 + 安全说明。不要提交编译产物，除非项目维护者明确要求。</p>
+        </div>
+      </section>
+
+      <section class="section" id="pull-request">
+        <div class="section-head">
+          <p class="eyebrow">提交 PR</p>
+          <h2>提交 Pull Request</h2>
+          <p>一个 PR 只解决一件事。模块、文档、重构分开提交；让审阅者能在合理时间内理解并验证。</p>
+        </div>
+
+        <div class="grid two">
+          <div class="panel">
+            <h3>PR 标题</h3>
+            <pre data-lang="text"><code>feat(modules): add example_http read-only probe
+fix(console): keep relative index after all
+docs(doc): add Termux and module tutorial</code></pre>
+            <h3>PR 描述模板</h3>
+            <ul class="clean-list">
+              <li><strong>做了什么：</strong>一句话说明模块/修复。</li>
+              <li><strong>为什么：</strong>使用场景、问题、关联 Issue。</li>
+              <li><strong>怎么验证：</strong>命令、输出摘要、截图（安全脱敏）。</li>
+              <li><strong>安全边界：</strong>是否需要授权、是否只读、默认值。</li>
+              <li><strong>兼容性：</strong>是否影响现有模块/命令。</li>
+              <li><strong>检查清单：</strong>gofmt / build / vet / test / lint。</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>审阅者会看什么</h3>
+            <ul class="clean-list">
+              <li>是否遵守 <code>sdk.Module</code> 契约。</li>
+              <li>是否只改必要文件，是否误改引擎。</li>
+              <li>错误处理、超时、输入校验、输出脱敏。</li>
+              <li>是否有破坏性默认行为。</li>
+              <li>选项默认值和 <code>Init</code> 合并是否一致。</li>
+              <li>文档是否能让别人复现。</li>
+              <li>测试是否可离线运行。</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="subhead">合并前自检</h3>
+        <pre data-lang="bash"><code>gofmt -l modules/your_module
+go build ./...
+go vet ./modules/your_module
+go test ./...
+./modules/bin/your_module --info
+./modules/bin/your_module --execute target=https://example.com/</code></pre>
+
+        <div class="callout warn">
+          <strong>不要提交</strong>
+          <p>真实凭据、客户数据、泄露的堆内存、未脱敏的 Cookie/Token、编译产物、编辑器缓存，以及与本次改动无关的格式化噪音。</p>
+        </div>
+      </section>
+
+      <section class="section" id="security">
+        <div class="section-head">
+          <p class="eyebrow">安全</p>
+          <h2>安全与合规</h2>
+          <p>三太子面向授权测试。模块作者对模块行为负责；框架提供执行边界，但不替代授权、法律判断和客户沟通。</p>
+        </div>
+
+        <div class="grid cards">
+          <article class="card">
+            <h3>授权先行</h3>
+            <p>确认书面授权、目标范围、时间窗口、速率限制和禁止动作。没有授权就不要运行任何网络模块。</p>
+          </article>
+          <article class="card">
+            <h3>默认只读</h3>
+            <p>新模块应默认只读。需要写入、删除、重启、认证尝试或高并发的能力必须显式选项开启，并在文档里警告。</p>
+          </article>
+          <article class="card">
+            <h3>输入与输出</h3>
+            <p>目标返回的 header/body 是不可信数据：限制大小、清洗控制字符、处理 bidi/ANSI，避免把目标内容当命令执行。</p>
+          </article>
+          <article class="card">
+            <h3>敏感数据</h3>
+            <p>报告与证据中脱敏 Cookie、Authorization、API Key、Token、密码。原始泄露数据单独存放并设置 0600 权限。</p>
+          </article>
+          <article class="card">
+            <h3>资源边界</h3>
+            <p>设置请求超时、最大响应体、最大记录数、并发上限。不要无限重试或扫描无边界 CIDR。</p>
+          </article>
+          <article class="card">
+            <h3>进程隔离</h3>
+            <p>框架用独立进程执行模块；但 <code>internal/security</code> 目前只是扩展点。生产环境请结合容器、低权限用户、网络策略和审计。</p>
+          </article>
+        </div>
+
+        <div class="callout warn">
+          <strong>漏洞披露</strong>
+          <p>发现框架或内置模块的安全问题，请不要在公开 Issue 里贴可直接利用的细节。优先使用仓库 Security 页面的 GitHub Security Advisory，或先联系维护者确认私密渠道。</p>
+        </div>
+      </section>
+
+      <section class="section" id="partners">
+        <div class="partner-card">
+          <div class="partner-copy">
+            <p class="eyebrow">合作</p>
+            <h2>寻找共同维护者与长期合作伙伴</h2>
+            <p class="partner-lead">
+              目前项目主要由一个人维护。模块开发、Issue 分诊、PR 审阅、文档、Termux/跨平台测试和发布都需要持续投入。
+              我正在寻找愿意长期一起维护这个项目的合作伙伴，而不是一次性提交。
+            </p>
+            <div class="partner-roles">
+              <span>模块作者</span>
+              <span>代码审阅</span>
+              <span>文档 / 本地化</span>
+              <span>Termux / 跨平台测试</span>
+              <span>CI / 发布</span>
+              <span>安全研究</span>
+            </div>
+            <div class="partner-actions">
+              <a class="button primary" href="https://github.com/ctkqiang/SanTaiZi/issues/new?title=%5B%E5%90%88%E4%BD%9C%5D%20" target="_blank" rel="noreferrer">发起合作 Issue</a>
+              <a class="button ghost" href="https://github.com/ctkqiang/SanTaiZi" target="_blank" rel="noreferrer">先看看仓库</a>
+            </div>
+          </div>
+          <div class="partner-side">
+            <h3>怎么开始</h3>
+            <ol class="clean-list">
+              <li>在 GitHub 发起 Issue，标题写 <code>[合作] 方向</code>。</li>
+              <li>介绍你的背景、可投入时间、代表作品或想负责的方向。</li>
+              <li>先做一个小 PR（文档、测试或一个小模块）。</li>
+              <li>双方确认节奏后，进入长期协作。</li>
+            </ol>
+            <p class="fine">不需要全职。持续、可沟通、尊重授权边界，比一次性大量提交更重要。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="section-head">
+          <p class="eyebrow">常见问题</p>
+          <h2>常见问题</h2>
+        </div>
+
+        <div class="faq-list">
+          <details>
+            <summary>模块加载不出来 / <code>all</code> 是空的</summary>
+            <p>确认 <code>SANTAIZI_MODULES_DIR</code> 指向包含可执行文件的目录；检查二进制是否有执行权限（<code>chmod +x</code>）；运行 <code>./modules/bin/模块名 --info</code> 看是否输出合法元数据。</p>
+          </details>
+          <details>
+            <summary>为什么 <code>./santaizi</code> 还是旧界面？</summary>
+            <p>执行 <code>./santaizi -V</code>，必须显示 <code>三太子 v1.2.0</code>。如果是旧版本，在仓库根目录运行 <code>make santaizi</code>，并关闭仍在运行的旧进程。</p>
+          </details>
+          <details>
+            <summary><code>go install</code> 安装到哪里？</summary>
+            <p>不设置 <code>GOBIN</code> 时安装到 <code>$(go env GOPATH)/bin</code>；设置 <code>GOBIN="$PWD/modules/bin"</code> 时直接安装到框架模块目录。当前 <code>go.mod</code> 的模块路径是 <code>santaizi</code>，请在仓库检出目录内执行 <code>go install ./modules/...</code>。</p>
+          </details>
+          <details>
+            <summary>模块执行失败，如何让框架识别错误？</summary>
+            <p>在 <code>Init</code> 或 <code>Run</code> 返回 error；SDK 会输出 <code>error:...</code> 并以非零状态退出。不要在模块里直接 <code>os.Exit(0)</code> 掩盖失败。</p>
+          </details>
+          <details>
+            <summary>为什么控制台的索引和全局模块 ID 不一样？</summary>
+            <p><code>search</code> / <code>all</code> 显示的是相对索引，<code>use 0</code> 指向最后一次列表的第 0 项。这样搜索结果可以直接选择，不需要记全局 ID。</p>
+          </details>
+          <details>
+            <summary>Termux 里表格还是溢出？</summary>
+            <p>确认运行 v1.2.0；该版本在 Termux 或窄终端使用纵向列表，并把宽表格限制在 100 列。仍异常时用 <code>./santaizi -V</code> 确认版本，并检查终端宽度。</p>
+          </details>
+          <details>
+            <summary>可以提交带攻击性的模块吗？</summary>
+            <p>可以讨论，但必须默认关闭危险能力、要求明确授权范围、提供安全说明和影响范围，并遵守当地法律。维护者可以拒绝高风险的默认行为。</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="section" id="license">
+        <div class="section-head">
+          <p class="eyebrow">许可证</p>
+          <h2>许可证与免责声明</h2>
+        </div>
+        <p>三太子采用 MIT 许可证。提交贡献即表示你同意以同一许可证发布你的贡献，并确认你有权提交相关代码；如果你代表雇主或客户贡献，请先确认代码所有权和发布权限。</p>
+        <p>本项目仅用于授权安全测试、教学和内部评估。作者与贡献者不对滥用、未授权访问、数据损坏或法律后果承担责任。使用前请确认目标授权、当地法律和组织政策。</p>
+        <div class="end-mark">
+          <span>三</span>
+          <p>保持好奇，保持边界。</p>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p>三太子 SanTaiZi · 模块化网络安全框架 · v1.2.0</p>
+        <p><a href="https://github.com/ctkqiang/SanTaiZi" target="_blank" rel="noreferrer">GitHub</a> · <a href="https://github.com/ctkqiang/SanTaiZi/blob/main/README.md" target="_blank" rel="noreferrer">README</a> · <a href="#top">回到顶部</a></p>
+      </footer>
+    </main>
+  </div>
+
+  <button class="to-top" id="to-top" type="button" aria-label="回到顶部" hidden>↑</button>
+  <script src="script.js" defer></script>
+</body>
+</html>

@@ -45,7 +45,7 @@ func (l *ModuleLoader) LoadModules(modulesDir string) error {
 		}
 
 		if err := l.loadModule(path); err != nil {
-			fmt.Printf("Failed to load module %s: %v\n", path, err)
+			fmt.Fprintf(os.Stderr, "Failed to load module %s: %v\n", path, err)
 		}
 
 		return nil
@@ -69,13 +69,13 @@ func (l *ModuleLoader) loadModule(path string) error {
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
 		if strings.HasPrefix(line, "name:") {
-			name = strings.TrimPrefix(line, "name:")
+			name = strings.TrimSpace(strings.TrimPrefix(line, "name:"))
 		} else if strings.HasPrefix(line, "description:") {
-			description = strings.TrimPrefix(line, "description:")
+			description = strings.TrimSpace(strings.TrimPrefix(line, "description:"))
 		} else if strings.HasPrefix(line, "cnvd:") {
-			cnvd = strings.TrimPrefix(line, "cnvd:")
+			cnvd = strings.TrimSpace(strings.TrimPrefix(line, "cnvd:"))
 		} else if strings.HasPrefix(line, "cve:") {
-			cve = strings.TrimPrefix(line, "cve:")
+			cve = strings.TrimSpace(strings.TrimPrefix(line, "cve:"))
 		} else if strings.HasPrefix(line, "option:") {
 			parts := strings.Split(strings.TrimPrefix(line, "option:"), ":")
 			if len(parts) == 4 {

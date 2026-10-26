@@ -56,7 +56,9 @@ func RunModule(module Module) {
 	if *executeFlag {
 		options := make(map[string]string)
 		for _, arg := range flag.Args() {
-			parts := strings.Split(arg, "=")
+			// Split only on the first "=" so option values may contain "="
+			// (for example URLs with query strings).
+			parts := strings.SplitN(arg, "=", 2)
 			if len(parts) == 2 {
 				options[parts[0]] = parts[1]
 			}
